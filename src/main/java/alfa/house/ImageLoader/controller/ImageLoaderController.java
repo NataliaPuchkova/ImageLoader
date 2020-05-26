@@ -1,6 +1,8 @@
 package alfa.house.ImageLoader.controller;
 
+import alfa.house.ImageLoader.service.FileLoadingService;
 import io.swagger.annotations.Api;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,8 +19,9 @@ import java.nio.file.Paths;
 @Api(value = "Image Loading", description = "Operation with tasks")
 public class ImageLoaderController {
 
-    //Save the uploaded file to this folder
-    private static String UPLOADED_FOLDER = "//temp//";
+    @Autowired
+    FileLoadingService service;
+
 
     @GetMapping(value = "/hello")
     public String getHello(){
@@ -30,26 +33,9 @@ public class ImageLoaderController {
     public String singleFileUpload(@RequestParam("file") MultipartFile file,
                                    RedirectAttributes redirectAttributes) {
 
-        if (file.isEmpty()) {
-            redirectAttributes.addFlashAttribute("message", "Please select a file to upload");
-            return "redirect:uploadStatus";
-        }
+        String name = service.loadIntoTempFolder(file, redirectAttributes);
 
-        try {
-
-            // Get the file and save it somewhere
-            byte[] bytes = file.getBytes();
-            Path path = Paths.get(UPLOADED_FOLDER + file.getOriginalFilename());
-            Files.write(path, bytes);
-
-            redirectAttributes.addFlashAttribute("message",
-                    "You successfully uploaded '" + file.getOriginalFilename() + "'");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return "redirect:/uploadStatus";
+        return name;
     }
 
     @GetMapping("/uploadStatus")
