@@ -23,7 +23,7 @@ dependencies {
 	implementation 'io.springfox:springfox-swagger-ui:2.9.2'
 	compile group: 'net.coobird', name: 'thumbnailator', version: '0.4.3'
 	compile group: 'software.amazon.awssdk', name: 'bom', version: '2.13.23', ext: 'pom'
-
+	runtimeOnly 'org.postgresql:postgresql'
 	compile 'com.amazonaws:aws-java-sdk:+'
 }
 

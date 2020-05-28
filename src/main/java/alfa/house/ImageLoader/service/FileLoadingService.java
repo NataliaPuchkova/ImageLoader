@@ -6,5 +6,5 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public interface FileLoadingService {
     String loadIntoTempFolder(MultipartFile file,
-                              RedirectAttributes redirectAttributes, String bucketName);
+                              RedirectAttributes redirectAttributes, String bucketName, String uid, int type, boolean isMain);
 }

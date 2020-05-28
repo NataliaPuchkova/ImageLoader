@@ -1,5 +1,7 @@
 package alfa.house.ImageLoader.service;
 
+import alfa.house.ImageLoader.dao.ImageRepository;
+import alfa.house.ImageLoader.model.Image;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -42,8 +45,11 @@ public class FileLoadingServiceImpl implements FileLoadingService {
     @Autowired
     UploadObjectS3 service;
 
+    @Autowired
+    ImageRepository daoService;
 
-    public String loadIntoTempFolder(MultipartFile file, RedirectAttributes redirectAttributes, String bucketName) {
+
+    public String loadIntoTempFolder(MultipartFile file, RedirectAttributes redirectAttributes, String bucketName, String id, int type, boolean isMain) {
         if (file.isEmpty()|| file.getOriginalFilename() == null || file.getOriginalFilename().equals("")) {
             redirectAttributes.addFlashAttribute("message", "Please select a file to upload");
             return "redirect:uploadStatus";
@@ -60,11 +66,14 @@ public class FileLoadingServiceImpl implements FileLoadingService {
             Path path = Paths.get(UPLOADED_FOLDER + fileName + extention);
             Files.write(path, bytes);
             service.uploadS3(bucketName, UPLOADED_FOLDER+fileName+extention, fileName+extention, stringObjKeyName);
-            cutImages(fileName, extention, S_WIDTH, S_HEIGHT, S_SIZE, bucketName);
-            cutImages(fileName, extention, L_WIDTH, L_HEIGHT, L_SIZE, bucketName);
-            cutImages(fileName, extention, XL_WIDTH, XL_HEIGHT, XL_SIZE, bucketName);
-            cutImages(fileName, extention, XXL_WIDTH, XXL_HEIGHT, XXL_SIZE, bucketName);
+            daoService.save((new Image()).
+                    setDate(OffsetDateTime.now()).
+                    setParent(id).
+                    setMain(isMain).
+                    setType(type).setPath(fileName+extention)
+            );
 
+            createImages(fileName, extention, bucketName, id, type, isMain) ;
 
             redirectAttributes.addFlashAttribute("message",
                     "You successfully uploaded '" + file.getOriginalFilename() + "'");
@@ -75,13 +84,20 @@ public class FileLoadingServiceImpl implements FileLoadingService {
         return fileName;
     }
 
+    private  void createImages(String fileName, String extention, String bucketName, String id, int type, boolean isMain) throws IOException {
+        cutImages(fileName, extention, S_WIDTH, S_HEIGHT, S_SIZE, bucketName, id, type, isMain);
+        cutImages(fileName, extention, L_WIDTH, L_HEIGHT, L_SIZE, bucketName, id, type, isMain);
+        cutImages(fileName, extention, XL_WIDTH, XL_HEIGHT, XL_SIZE, bucketName, id, type, isMain);
+        cutImages(fileName, extention, XXL_WIDTH, XXL_HEIGHT, XXL_SIZE, bucketName, id, type, isMain);
+    }
+
     private String getExtension(String fileName){
         int index = fileName.lastIndexOf(".");
         if (index==-1) return "";
         return fileName.substring(index);
     }
 
-    private String cutImages(String fileName, String extention, int width, int height, String middle, String bucketName) throws IOException {
+    private String cutImages(String fileName, String extention, int width, int height, String middle, String bucketName, String uid, int type, boolean isMain) throws IOException {
         BufferedImage image= ImageIO.read(new FileInputStream(UPLOADED_FOLDER + fileName + extention));
         int min=0;
         if(image.getWidth()>image.getHeight())
@@ -97,6 +113,12 @@ public class FileLoadingServiceImpl implements FileLoadingService {
                 .toFile(str.toString());
         String f = (new StringBuilder()).append(fileName).append(middle).append(extention).toString();
         service.uploadS3(bucketName, UPLOADED_FOLDER+f, f, stringObjKeyName);
+        daoService.save((new Image()).
+                setDate(OffsetDateTime.now()).
+                setParent(uid).
+                setMain(isMain).
+                setType(type).setPath(f)
+        );
         return f;
     }
 

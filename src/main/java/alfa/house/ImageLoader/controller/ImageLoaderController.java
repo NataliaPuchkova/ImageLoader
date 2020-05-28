@@ -51,9 +51,11 @@ public class ImageLoaderController {
                     required = true)  @RequestParam("uid") String uid,
             @ApiParam(value = "Type: 0 - house, 1 - user, 2 - document",
                     required = true)  @RequestParam("type") int type,
+            @ApiParam(value = "is Main picture?",
+                    required = true)  @RequestParam("ismain") boolean isMain,
                                    RedirectAttributes redirectAttributes) {
 
-        String name = service.loadIntoTempFolder(file, redirectAttributes, bucketName);
+        String name = service.loadIntoTempFolder(file, redirectAttributes, bucketName, uid, type, isMain);
 
         return name;
     }
